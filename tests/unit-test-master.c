@@ -39,7 +39,7 @@ int main(void)
         int ret;
 
         /* RTU parity : none, even, odd */
-/*      modbus_init_rtu(&mb_param, "/dev/ttyS0", 19200, "none", 8, 1); */
+/*      modbus_init_rtu(&mb_param, "/dev/ttyS0", 19200, "none", 8, 1, 0); */
 
         /* TCP */
         modbus_init_tcp(&mb_param, "127.0.0.1", 1502);

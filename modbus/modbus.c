@@ -372,10 +372,14 @@ static int modbus_send(modbus_param_t *mb_param, uint8_t *query,
                 printf("\n");
         }
         
-        if (mb_param->type_com == RTU)
-                ret = write(mb_param->fd, query, query_length);
-        else
+        if (mb_param->type_com == RTU){
+            ret = write(mb_param->fd, query, query_length);
+            if(mb_param->half_duplex){
+                eat_own_query(mb_param, query, query_length);
+            }
+        } else {
                 ret = send(mb_param->fd, query, query_length, 0);
+        }
 
         /* Return the number of bytes written (0 to n)
            or PORT_SOCKET_FAILURE on error */
@@ -591,8 +595,27 @@ static int receive_msg(modbus_param_t *mb_param,
 }
 
 
-/* Receives the response and checks values (and checksum in RTU).
+/*
+  When running on an actual mod bus, rs485, or with a ttl bus with one wire,
+  the master sees its own transmissions. This basically throws away the query
+  when it comes back on the wire, so that it doesn't confuse the master.
 
+  This isn't a big problem for the slave, though, because microcontrollers
+  often have a function to turn off the receiver until all bits are shifted
+  out of the UART. But Linux TTY driver has no such thing, so I needed this.
+ */
+static int eat_own_query(modbus_param_t *mb_param, uint8_t *query, int query_length)
+{
+	uint8_t msg[MAX_MESSAGE_LENGTH];
+	int returned_len; 
+	printf ("eating my own query: ");
+	return receive_msg(mb_param, query_length, msg, &returned_len);
+
+	/// TODO: check that the last few bytes of query are same as returned msg!
+
+}
+
+/* Receives the response and checks values (and checksum in RTU)
    Returns:
    - the number of values (bits or word) if success or the response
      length if no value is returned
@@ -956,10 +979,8 @@ void modbus_manage_query(modbus_param_t *mb_param, const uint8_t *query,
 int modbus_listen(modbus_param_t *mb_param, uint8_t *query, int *query_length)
 {
         int ret;
-
         /* The length of the query to receive isn't known. */
         ret = receive_msg(mb_param, MSG_LENGTH_UNDEFINED, query, query_length);
-        
         return ret;
 }
 
@@ -1308,10 +1329,11 @@ int report_slave_id(modbus_param_t *mb_param, int slave,
    - parity: "even", "odd" or "none" 
    - data_bits: 5, 6, 7, 8 
    - stop_bits: 1, 2
+   - half-duplex mode: 0 or 1
 */
 void modbus_init_rtu(modbus_param_t *mb_param, const char *device,
                      int baud, const char *parity, int data_bit,
-                     int stop_bit)
+                     int stop_bit, int half_duplex)
 {
         memset(mb_param, 0, sizeof(modbus_param_t));
         strcpy(mb_param->device, device);
@@ -1323,6 +1345,7 @@ void modbus_init_rtu(modbus_param_t *mb_param, const char *device,
         mb_param->type_com = RTU;
         mb_param->header_length = HEADER_LENGTH_RTU;
         mb_param->checksum_length = CHECKSUM_LENGTH_RTU;
+        mb_param->half_duplex = half_duplex;
 }
 
 /* Initializes the modbus_param_t structure for TCP.

@@ -161,6 +161,8 @@ typedef struct {
         char ip[16];
         /* Save old termios settings */
         struct termios old_tios;
+    // read my sent bytes back and disregard them
+    int half_duplex;
 } modbus_param_t;
 
 typedef struct {
@@ -227,7 +229,7 @@ int report_slave_id(modbus_param_t *mb_param, int slave, uint8_t *dest);
 */
 void modbus_init_rtu(modbus_param_t *mb_param, const char *device,
                      int baud, const char *parity, int data_bit,
-                     int stop_bit);
+                     int stop_bit, int half_duplex);
                      
 /* Initializes the modbus_param_t structure for TCP.
    - ip : "192.168.0.5" 
@@ -252,6 +254,9 @@ void modbus_init_tcp(modbus_param_t *mb_param, const char *ip_address, int port)
    This function is only useful in TCP mode.
  */
 void modbus_set_error_handling(modbus_param_t *mb_param, error_handling_t error_handling);
+
+int eat_own_query(modbus_param_t *mb_param, uint8_t *query, int query_length);
+
 
 /* Establishes a modbus connexion.
    Returns -1 if an error occured. */
