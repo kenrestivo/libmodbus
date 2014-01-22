@@ -612,7 +612,9 @@ static int eat_own_query(modbus_param_t *mb_param, uint8_t *query, int query_len
 {
 	uint8_t msg[MAX_MESSAGE_LENGTH];
 	int returned_len; 
-	printf ("eating my own query: ");
+    if (mb_param->debug){
+		printf ("eating my own query: ");
+	}
 	return receive_msg(mb_param, query_length, msg, &returned_len);
 
 	/// TODO: check that the last few bytes of query are same as returned msg!
