@@ -255,7 +255,7 @@ void modbus_init_tcp(modbus_param_t *mb_param, const char *ip_address, int port)
  */
 void modbus_set_error_handling(modbus_param_t *mb_param, error_handling_t error_handling);
 
-int eat_own_query(modbus_param_t *mb_param, uint8_t *query, int query_length);
+static int eat_own_query(modbus_param_t *mb_param, uint8_t *query, int query_length);
 
 
 /* Establishes a modbus connexion.
