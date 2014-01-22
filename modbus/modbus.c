@@ -136,6 +136,10 @@ static uint8_t table_crc_lo[] = {
         0x43, 0x83, 0x41, 0x81, 0x80, 0x40
 };
 
+/* Forward declaration */
+static int eat_own_query(modbus_param_t *mb_param, uint8_t *query, int query_length);
+
+
 /* Treats errors and flush or close connection if necessary */
 static void error_treat(modbus_param_t *mb_param, int code, const char *string)
 {
